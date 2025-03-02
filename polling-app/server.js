@@ -4,6 +4,8 @@ const path = require('path');
 const cors = require('cors');
 const crypto = require('crypto');
 const app = express();
+const helmet = require('helmet');
+
 
 // Add a configuration section
 const RESET_PASSWORD = 'pollreset123'; // Change this to a secure password
@@ -12,6 +14,7 @@ const RESET_PASSWORD = 'pollreset123'; // Change this to a secure password
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(helmet());
 
 // Database Connection
 const db = new sqlite3.Database('polls.db');

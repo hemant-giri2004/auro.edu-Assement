@@ -19,6 +19,7 @@
     "dependencies": {
         "cors": "^2.8.5",
         "express": "^4.21.2",
+        "helmet": "^8.0.0",
         "sqlite3": "^5.1.7"
     },
     "devDependencies": {
@@ -29,6 +30,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/your-username/auro.edu-Assement"
+        "url": "https://github.com/hemant-giri2004/auro.edu-Assement"
     }
 }
