@@ -1,0 +1,122 @@
+/* Existing styles remain the same, add these new styles */
+
+.poll-creator {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.question-selector {
+    margin-bottom: 30px;
+}
+
+.question-option {
+    margin: 15px 0;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.question-option:hover {
+    border-color: #6c5ce7;
+}
+
+.question-option input[type="radio"] {
+    margin-right: 10px;
+}
+
+.custom-question-input {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: none;
+}
+
+.question-option.custom.active .custom-question-input {
+    display: block;
+}
+
+.options-section {
+    margin: 30px 0;
+}
+
+.preset-options, .custom-options {
+    margin-top: 20px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.option-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.add-option-btn {
+    padding: 10px 20px;
+    background: #6c5ce7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.custom-option-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.custom-option-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.remove-option {
+    background: #ff7675;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.create-poll-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a367fc 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.create-poll-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+}
