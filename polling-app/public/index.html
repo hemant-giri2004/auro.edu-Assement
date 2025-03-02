@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
     <div class="container">
         <!-- Single Header -->
@@ -42,7 +44,23 @@
                 </form>
             </div>
         </div>
-
+        <!-- Add this modal for reset password -->
+        <div id="resetPasswordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Reset All Polls</h2>
+                    <span class="close-reset">&times;</span>
+                </div>
+                <form id="resetPasswordForm">
+                    <div class="form-group">
+                        <label for="resetPassword">Enter Reset Password:</label>
+                        <input type="password" id="resetPassword" name="resetPassword" required
+                            placeholder="Enter reset password">
+                    </div>
+                    <button type="submit" class="primary-btn">Confirm Reset</button>
+                </form>
+            </div>
+        </div>
         <!-- Polls Container -->
         <main id="pollsContainer" class="polls-container">
             <!-- Polls will be dynamically added here -->
@@ -50,4 +68,5 @@
     </div>
     <script src="/script.js"></script>
 </body>
+
 </html>

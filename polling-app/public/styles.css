@@ -247,3 +247,28 @@ input[type="text"]:focus {
     background: #c0392b;
     transform: translateY(-2px);
 }
+
+/* Additional styles for reset password modal */
+#resetPasswordModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#resetPasswordModal .close-reset {
+    cursor: pointer;
+    font-size: 24px;
+    color: #6c757d;
+}
+
+#resetPasswordModal .form-group {
+    margin-bottom: 20px;
+}
+
+#resetPasswordModal input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
