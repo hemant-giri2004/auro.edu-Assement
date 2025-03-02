@@ -3,78 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customizable Poll Creator</title>
+    <title>Polling App</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <div class="container">
+        <!-- Single Header -->
         <header>
-            <h1>Create Your Poll</h1>
-            <p class="subtitle">Choose from existing questions or create your own</p>
+            <h1>Interactive Polls</h1>
+            <div class="button-group">
+                <button id="createPollBtn" class="create-poll-btn">Create New Poll</button>
+                <button id="resetBtn" class="reset-btn">Reset All Polls</button>
+            </div>
         </header>
 
-        <main class="poll-creator">
-            <!-- Question Selection Section -->
-            <div class="question-selector">
-                <h2>Select or Create Question</h2>
-                <div class="preset-questions">
-                    <div class="question-option" data-question="1">
-                        <input type="radio" name="question" id="q1">
-                        <label for="q1">How Do You Prefer to Learn New Skills?</label>
-                    </div>
-                    <div class="question-option" data-question="2">
-                        <input type="radio" name="question" id="q2">
-                        <label for="q2">What's Your Preferred Work Environment?</label>
-                    </div>
-                    <div class="question-option" data-question="3">
-                        <input type="radio" name="question" id="q3">
-                        <label for="q3">Which Technology Interests You Most?</label>
-                    </div>
-                    <div class="question-option custom">
-                        <input type="radio" name="question" id="custom">
-                        <label for="custom">Create Your Own Question</label>
-                        <input type="text" id="custom-question" class="custom-question-input" placeholder="Enter your question" disabled>
-                    </div>
+        <!-- Create Poll Modal -->
+        <div id="createPollModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create New Poll</h2>
+                    <span class="close">&times;</span>
                 </div>
+                <form id="createPollForm">
+                    <div class="form-group">
+                        <label for="question">Question:</label>
+                        <input type="text" id="question" placeholder="Enter your question" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Options:</label>
+                        <div id="optionsContainer">
+                            <input type="text" class="option-input" placeholder="Option 1" required>
+                            <input type="text" class="option-input" placeholder="Option 2" required>
+                        </div>
+                        <button type="button" id="addOptionBtn" class="secondary-btn">Add Option</button>
+                    </div>
+                    <button type="submit" class="primary-btn">Create Poll</button>
+                </form>
             </div>
-
-            <!-- Options Section -->
-            <div class="options-section">
-                <h2>Poll Options</h2>
-                <div id="preset-options" class="preset-options">
-                    <!-- Preset options will be loaded here -->
-                </div>
-
-                <div id="custom-options" class="custom-options" style="display: none;">
-                    <button id="add-option" class="add-option-btn">
-                        <i class="fas fa-plus"></i> Add Option
-                    </button>
-                    <div id="custom-options-list">
-                        <!-- Custom options will be added here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Create Poll Button -->
-            <button id="create-poll" class="create-poll-btn">
-                Create Poll
-                <i class="fas fa-arrow-right"></i>
-            </button>
-        </main>
-
-        <!-- Poll Display Section (Initially Hidden) -->
-        <div class="poll-display" style="display: none;">
-            <!-- Poll content will be displayed here -->
         </div>
-    </div>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading">
-        <div class="spinner"></div>
+        <!-- Polls Container -->
+        <main id="pollsContainer" class="polls-container">
+            <!-- Polls will be dynamically added here -->
+        </main>
     </div>
-
-    <script src="script.js"></script>
+    <script src="/script.js"></script>
 </body>
 </html>

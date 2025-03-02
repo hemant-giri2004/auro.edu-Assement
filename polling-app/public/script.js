@@ -1,131 +1,59 @@
-// Predefined questions and their options
-const presetQuestions = {
-    1: {
-        question: "How Do You Prefer to Learn New Skills?",
-        options: ["Online Courses", "Hands-on Practice", "Mentorship", "Traditional Training"]
-    },
-    2: {
-        question: "What's Your Preferred Work Environment?",
-        options: ["Remote Work", "Office Space", "Hybrid Model", "Co-working Space"]
-    },
-    3: {
-        question: "Which Technology Interests You Most?",
-        options: ["Artificial Intelligence", "Blockchain", "Cloud Computing", "IoT"]
+// DOM Elements
+const pollsContainer = document.getElementById('pollsContainer');
+const createPollBtn = document.getElementById('createPollBtn');
+const modal = document.getElementById('createPollModal');
+const closeBtn = document.querySelector('.close');
+const createPollForm = document.getElementById('createPollForm');
+const addOptionBtn = document.getElementById('addOptionBtn');
+const optionsContainer = document.getElementById('optionsContainer');
+const resetBtn = document.getElementById('resetBtn');
+
+// Event Listeners
+createPollBtn.onclick = () => modal.style.display = "block";
+closeBtn.onclick = () => modal.style.display = "none";
+window.onclick = (e) => {
+    if (e.target == modal) modal.style.display = "none";
+}
+
+// Add this event listener
+resetBtn.onclick = async () => {
+    if (confirm('Are you sure you want to reset all polls? This cannot be undone.')) {
+        try {
+            const response = await fetch('/api/reset', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                alert('All polls have been reset!');
+                loadPolls(); // Refresh the polls display
+            }
+        } catch (error) {
+            console.error('Error resetting polls:', error);
+            alert('Failed to reset polls');
+        }
     }
 };
 
-// DOM Elements
-const questionOptions = document.querySelectorAll('.question-option');
-const customQuestionInput = document.getElementById('custom-question');
-const presetOptionsDiv = document.getElementById('preset-options');
-const customOptionsDiv = document.getElementById('custom-options');
-const addOptionBtn = document.getElementById('add-option');
-const customOptionsList = document.getElementById('custom-options-list');
-const createPollBtn = document.getElementById('create-poll');
+// Add Option Button
+addOptionBtn.onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'option-input';
+    input.required = true;
+    optionsContainer.appendChild(input);
+}
 
-// Event Listeners
-questionOptions.forEach(option => {
-    const radio = option.querySelector('input[type="radio"]');
-    radio.addEventListener('change', () => handleQuestionSelection(option));
-});
-
-addOptionBtn.addEventListener('click', addCustomOption);
-createPollBtn.addEventListener('click', createPoll);
-
-// Handle Question Selection
-function handleQuestionSelection(option) {
-    const isCustom = option.classList.contains('custom');
-    customQuestionInput.disabled = !isCustom;
+// Create Poll Form Submit
+createPollForm.onsubmit = async (e) => {
+    e.preventDefault();
     
-    if (isCustom) {
-        showCustomOptionsSection();
-    } else {
-        showPresetOptions(option.dataset.question);
-    }
-}
-
-// Show Preset Options
-function showPresetOptions(questionId) {
-    customOptionsDiv.style.display = 'none';
-    presetOptionsDiv.style.display = 'block';
-    
-    const options = presetQuestions[questionId].options;
-    presetOptionsDiv.innerHTML = options.map((option, index) => `
-        <div class="option-item">
-            <input type="checkbox" id="option${index}" value="${option}">
-            <label for="option${index}">${option}</label>
-        </div>
-    `).join('');
-}
-
-// Show Custom Options Section
-function showCustomOptionsSection() {
-    presetOptionsDiv.style.display = 'none';
-    customOptionsDiv.style.display = 'block';
-    customOptionsList.innerHTML = ''; // Clear existing options
-    addCustomOption(); // Add first option field
-    addCustomOption(); // Add second option field
-}
-
-// Add Custom Option
-function addCustomOption() {
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'custom-option-input';
-    optionDiv.innerHTML = `
-        <input type="text" placeholder="Enter option text" class="option-text">
-        <button class="remove-option" onclick="removeOption(this)">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    customOptionsList.appendChild(optionDiv);
-}
-
-// Remove Option
-function removeOption(button) {
-    const optionDiv = button.parentElement;
-    if (customOptionsList.children.length > 2) { // Maintain minimum 2 options
-        optionDiv.remove();
-    } else {
-        showNotification('Minimum 2 options required', 'error');
-    }
-}
-
-// Create Poll
-async function createPoll() {
-    const selectedQuestion = document.querySelector('input[name="question"]:checked');
-    if (!selectedQuestion) {
-        showNotification('Please select a question', 'error');
-        return;
-    }
-
-    let question, options;
-
-    if (selectedQuestion.id === 'custom') {
-        question = customQuestionInput.value.trim();
-        options = Array.from(customOptionsList.querySelectorAll('.option-text'))
-            .map(input => input.value.trim())
-            .filter(text => text !== '');
-    } else {
-        const questionId = selectedQuestion.parentElement.dataset.question;
-        const selectedOptions = Array.from(presetOptionsDiv.querySelectorAll('input[type="checkbox"]:checked'))
-            .map(checkbox => checkbox.value);
-        question = presetQuestions[questionId].question;
-        options = selectedOptions;
-    }
-
-    // Validate
-    if (!question) {
-        showNotification('Please enter a question', 'error');
-        return;
-    }
-    if (options.length < 2) {
-        showNotification('Please provide at least 2 options', 'error');
-        return;
-    }
+    const question = document.getElementById('question').value;
+    const options = [...document.getElementsByClassName('option-input')]
+        .map(input => input.value)
+        .filter(value => value.trim() !== '');
 
     try {
-        showLoading(true);
-        const response = await fetch(`${API_URL}/api/polls`, {
+        const response = await fetch('/api/polls', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -133,34 +61,76 @@ async function createPoll() {
             body: JSON.stringify({ question, options })
         });
 
-        if (!response.ok) throw new Error('Failed to create poll');
-
-        const poll = await response.json();
-        showPoll(poll);
-        showNotification('Poll created successfully!', 'success');
+        if (response.ok) {
+            modal.style.display = "none";
+            createPollForm.reset();
+            loadPolls();
+        }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Failed to create poll', 'error');
-    } finally {
-        showLoading(false);
+        console.error('Error creating poll:', error);
     }
 }
 
-// Show Poll
-function showPoll(poll) {
-    document.querySelector('.poll-creator').style.display = 'none';
-    const pollDisplay = document.querySelector('.poll-display');
-    pollDisplay.style.display = 'block';
-    
-    // Add poll display HTML here (similar to original poll display)
-    // You can reuse the poll display code from the previous version
+// Load Polls
+async function loadPolls() {
+    try {
+        const response = await fetch('/api/polls');
+        const polls = await response.json();
+        displayPolls(polls);
+    } catch (error) {
+        console.error('Error loading polls:', error);
+    }
 }
 
-// Utility Functions (loading, notifications, etc.)
-function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'flex' : 'none';
+// Display Polls
+function displayPolls(polls) {
+    pollsContainer.innerHTML = polls.map(poll => `
+        <div class="poll-card" data-poll-id="${poll.id}">
+            <h2 class="poll-question">${poll.question}</h2>
+            <div class="poll-options">
+                ${poll.options.map(option => `
+                    <div class="poll-option" data-option-id="${option.id}">
+                        <div class="option-text">${option.text}</div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${calculatePercentage(option.votes, poll.options)}%"></div>
+                        </div>
+                        <div class="vote-count">${option.votes} votes</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers for voting
+    document.querySelectorAll('.poll-option').forEach(option => {
+        option.onclick = async () => {
+            const pollId = option.parentElement.parentElement.dataset.pollId;
+            const optionId = option.dataset.optionId;
+            
+            try {
+                const response = await fetch(`/api/polls/${pollId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ optionId: parseInt(optionId) })
+                });
+
+                if (response.ok) {
+                    loadPolls(); // Refresh polls after voting
+                }
+            } catch (error) {
+                console.error('Error voting:', error);
+            }
+        };
+    });
 }
 
-function showNotification(message, type) {
-    // Implementation remains the same
+// Calculate vote percentage
+function calculatePercentage(votes, options) {
+    const totalVotes = options.reduce((sum, option) => sum + option.votes, 0);
+    return totalVotes === 0 ? 0 : (votes / totalVotes) * 100;
 }
+
+// Load polls when page loads
+loadPolls();

@@ -1,8 +1,7 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-require('dotenv').config();
+const cors = require('cors');
 
 const app = express();
 
@@ -10,128 +9,199 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+// Add this near the top of your server.js
+app.use(express.static(path.join(__dirname, 'public')));
+// Database setup
+const db = new sqlite3.Database('polls.db');
 
-// MongoDB Schema
-const pollSchema = new mongoose.Schema({
-    question: {
-        type: String,
-        required: true
-    },
-    options: [{
-        text: String,
-        votes: {
-            type: Number,
-            default: 0
-        }
-    }],
-    totalVotes: {
-        type: Number,
-        default: 0
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+// Create tables
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS polls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS options (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        poll_id INTEGER,
+        text TEXT NOT NULL,
+        votes INTEGER DEFAULT 0,
+        FOREIGN KEY(poll_id) REFERENCES polls(id)
+    )`);
 });
-
-const Poll = mongoose.model('Poll', pollSchema);
 
 // Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
-// Get all polls
-app.get('/api/polls', async (req, res) => {
-    try {
-        const polls = await Poll.find().sort({ createdAt: -1 });
-        res.json(polls);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Create new poll
-app.post('/api/polls', async (req, res) => {
-    try {
-        const { question, options } = req.body;
-        
-        // Validation
-        if (!question || !options || options.length < 2) {
-            return res.status(400).json({ 
-                message: 'Question and at least 2 options are required' 
+// Add this route to your server.js
+app.post('/api/reset', (req, res) => {
+    db.run(`DELETE FROM options`, [], (err) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        db.run(`DELETE FROM polls`, [], (err) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            // Reset the auto-increment
+            db.run(`DELETE FROM sqlite_sequence WHERE name IN ('polls', 'options')`, [], (err) => {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                res.json({ message: 'Database reset successfully' });
             });
-        }
-
-        const poll = new Poll({
-            question,
-            options: options.map(opt => ({ text: opt, votes: 0 })),
-            totalVotes: 0
         });
-
-        const newPoll = await poll.save();
-        res.status(201).json(newPoll);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Submit vote
-app.post('/api/polls/:id/vote', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { optionIndex } = req.body;
-
-        const poll = await Poll.findById(id);
-        if (!poll) {
-            return res.status(404).json({ message: 'Poll not found' });
-        }
-
-        if (optionIndex < 0 || optionIndex >= poll.options.length) {
-            return res.status(400).json({ message: 'Invalid option index' });
-        }
-
-        // Update vote count
-        poll.options[optionIndex].votes += 1;
-        poll.totalVotes += 1;
-        
-        const updatedPoll = await poll.save();
-        res.json(updatedPoll);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Delete poll
-app.delete('/api/polls/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const poll = await Poll.findByIdAndDelete(id);
-        
-        if (!poll) {
-            return res.status(404).json({ message: 'Poll not found' });
-        }
-        
-        res.json({ message: 'Poll deleted successfully' });
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ 
-        message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 
+// Get all polls
+app.get('/api/polls', (req, res) => {
+    db.all(`
+        SELECT 
+            p.id, 
+            p.question, 
+            p.created_at,
+            json_group_array(
+                json_object(
+                    'id', o.id,
+                    'text', o.text,
+                    'votes', o.votes
+                )
+            ) as options
+        FROM polls p
+        LEFT JOIN options o ON p.id = o.poll_id
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+    `, (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        // Parse the JSON string in options
+        rows.forEach(row => {
+            row.options = JSON.parse(row.options);
+        });
+        res.json(rows);
+    });
+});
+
+// Create new poll
+app.post('/api/polls', (req, res) => {
+    const { question, options } = req.body;
+    
+    if (!question || !options || options.length < 2) {
+        return res.status(400).json({ 
+            error: 'Question and at least 2 options are required' 
+        });
+    }
+
+    db.run(`INSERT INTO polls (question) VALUES (?)`, [question], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        const pollId = this.lastID;
+        const optionValues = options.map(opt => `(${pollId}, ?, 0)`).join(',');
+        const optionParams = options.map(opt => opt.toString());
+        
+        db.run(
+            `INSERT INTO options (poll_id, text, votes) VALUES ${optionValues}`,
+            optionParams,
+            (err) => {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                res.status(201).json({ 
+                    id: pollId, 
+                    question, 
+                    options: options.map(text => ({ text, votes: 0 }))
+                });
+            }
+        );
+    });
+});
+
+// Submit vote
+app.post('/api/polls/:pollId/vote', (req, res) => {
+    const { pollId } = req.params;
+    const { optionId } = req.body;
+    
+    db.run(
+        `UPDATE options SET votes = votes + 1 
+         WHERE id = ? AND poll_id = ?`,
+        [optionId, pollId],
+        function(err) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            if (this.changes === 0) {
+                res.status(404).json({ error: 'Option not found' });
+                return;
+            }
+            
+            // Get updated poll data
+            db.get(
+                `SELECT 
+                    p.id, 
+                    p.question,
+                    json_group_array(
+                        json_object(
+                            'id', o.id,
+                            'text', o.text,
+                            'votes', o.votes
+                        )
+                    ) as options
+                FROM polls p
+                LEFT JOIN options o ON p.id = o.poll_id
+                WHERE p.id = ?
+                GROUP BY p.id`,
+                [pollId],
+                (err, row) => {
+                    if (err) {
+                        res.status(500).json({ error: err.message });
+                        return;
+                    }
+                    row.options = JSON.parse(row.options);
+                    res.json(row);
+                }
+            );
+        }
+    );
+});
+
+// Delete poll
+app.delete('/api/polls/:id', (req, res) => {
+    const { id } = req.params;
+    
+    db.run(`DELETE FROM options WHERE poll_id = ?`, [id], (err) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        db.run(`DELETE FROM polls WHERE id = ?`, [id], function(err) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            if (this.changes === 0) {
+                res.status(404).json({ error: 'Poll not found' });
+                return;
+            }
+            res.json({ message: 'Poll deleted successfully' });
+        });
+    });
+});
+
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
